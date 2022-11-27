@@ -1,0 +1,6 @@
+pytest
+matplotlib
+pandas
+numpy
+scikit-learn
+git+https://github.com/camirmas/albatross.git
