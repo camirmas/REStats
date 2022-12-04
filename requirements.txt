@@ -3,4 +3,5 @@ matplotlib
 pandas
 numpy
 scikit-learn
+skforecast
 git+https://github.com/camirmas/albatross.git
