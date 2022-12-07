@@ -4,4 +4,5 @@ pandas
 numpy
 scikit-learn
 skforecast
+statsmodels
 git+https://github.com/camirmas/albatross.git
