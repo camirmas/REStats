@@ -5,4 +5,6 @@ numpy
 scikit-learn
 skforecast
 statsmodels
+cmdstanpy
+arviz
 git+https://github.com/camirmas/albatross.git
