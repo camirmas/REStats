@@ -135,3 +135,7 @@ data
 *.png
 
 .DS_Store
+
+forecast_files/
+
+*.html
