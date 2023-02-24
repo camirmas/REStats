@@ -1,10 +1,2 @@
-pytest
-matplotlib
-pandas
-numpy
-scikit-learn
 skforecast
-statsmodels
-pymc
-arviz
 git+https://github.com/camirmas/albatross.git
