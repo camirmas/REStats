@@ -1,7 +1,8 @@
 import os
 
+import numpy as np
 import pandas as pd
-from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import NearestNeighbors
 
 
 def load_SCADA(year=2020):
@@ -41,11 +42,50 @@ def load_SCADA(year=2020):
     return wt
 
 
-def filter_outliers(data, contamination=.05):
-    iforest = IsolationForest(contamination=contamination)
-    pred = iforest.fit_predict(data)
-    filtered = [p == 1 for p in pred]
-    outliers = [p == -1 for p in pred]
+def filter_outliers(data, regions=(3, 12), n_neighbors=100, outlier_threshold=.0015, **kwargs):
+    p_rated = 2050 # kW
+    region_2, region_3 = regions
+    wt = data.dropna()
+    wt_r1 = wt[wt["Wind speed"] < region_2]
+    wt_r2 = wt[(wt["Wind speed"] >= region_2) & (wt["Wind speed"] < region_3)]
+    wt_r3 = wt[wt["Wind speed"] >= region_3]
 
-    return data[filtered], data[outliers]
+    # region II filter
+    p_r2 = wt_r2[["Power"]]
+    X_r2 = (p_r2 - p_r2.mean())/p_r2.std()
+    knn_r2 = NearestNeighbors(n_neighbors=100, **kwargs)
+    knn_r2.fit(X_r2)
+    distances_r2, _ = knn_r2.kneighbors(X_r2)
 
+    avg_dist_r2 = distances_r2.mean(axis=1)
+    [outliers_r2] = np.where(avg_dist_r2 > .05)
+    keep_idxs_r2 = [i for i, _ in enumerate(wt_r2.index) if i not in outliers_r2]
+    wt_filtered_r2 = wt_r2.iloc[keep_idxs_r2]
+    
+    # Manually remove outliers based on percentage of rated power
+    wt_filtered_r2 = wt_filtered_r2[wt_filtered_r2["Power"] > (outlier_threshold*p_rated)]
+    wt_filtered_r2 = wt_filtered_r2[wt_filtered_r2["Power"] > (outlier_threshold*p_rated)]
+
+    wt_outliers_r2 = wt_r2.iloc[outliers_r2]
+
+    print(f"R2 % removed: {(len(wt_r2) - len(wt_filtered_r2))/len(wt_r2)*100}") 
+
+    ## region III filter
+    p_r3 = wt_r3[["Power"]]
+    X_r3 = (p_r3 - p_r3.mean())/p_r3.std()
+    knn_r3 = NearestNeighbors(n_neighbors=n_neighbors, **kwargs)
+    knn_r3.fit(X_r3)
+    distances_r3, _ = knn_r3.kneighbors(X_r3)
+
+    avg_dist_r3 = distances_r3.mean(axis=1)
+    [outliers_r3] = np.where(avg_dist_r3 > .075)
+    keep_idxs_r3 = [i for i, _ in enumerate(wt_r3.index) if i not in outliers_r3]
+    wt_filtered_r3 = wt_r3.iloc[keep_idxs_r3]
+    wt_outliers_r3 = wt_r3.iloc[outliers_r3]
+
+    print(f"R3 % removed: {len(outliers_r3)/len(wt_r3)*100}") 
+
+    wt_filtered_r3 = wt_r3.iloc[keep_idxs_r3]
+    wt_outliers_r3 = wt_r3.iloc[outliers_r3]
+
+    return pd.concat([wt_r1, wt_filtered_r2, wt_filtered_r3])
