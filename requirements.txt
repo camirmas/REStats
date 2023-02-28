@@ -1,2 +1,1 @@
-skforecast
 git+https://github.com/camirmas/albatross.git
