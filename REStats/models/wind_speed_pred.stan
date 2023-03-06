@@ -1,6 +1,10 @@
 data {
-  int<lower=1> T;            // num observations
+  int<lower=2> T;            // num observations
   array[T] real y;           // observed outputs
+  int<lower=0> n_pred;
+}
+transformed data {
+  int<lower=0> X = T + n_pred;
 }
 parameters {
   vector[2] phi;                  // autoregression coeff
@@ -20,17 +24,20 @@ transformed parameters {
     err[t] = y[t] - nu[t];
   }
 }
-model {
-  phi ~ normal(0, 2);
-  theta ~ normal(0, 2);
-  sigma ~ cauchy(0, .5);
-  err ~ normal(0, sigma);    // likelihood
-}
 generated quantities {
-  array[T] real y_rep = normal_rng(nu, sigma);
-  vector[T] log_lik;
+  vector[X] nu_predict;
+  vector[X] predict;
+  vector[X] err_predict;
 
-  for (i in 1:T) {
-    log_lik[i] = normal_lpdf(y[i] | nu[i], sigma);
+  for (t in 1:X) {
+    if (t <= T) {
+      predict[t] = normal_rng(nu[t], sigma);
+      nu_predict[t] = nu[t];
+      err_predict[t] = err[t];
+    } else {
+      nu_predict[t] = phi[1] * predict[t - 1] + phi[2] * predict[t - 2] + theta * err_predict[t - 1];
+      predict[t] = normal_rng(nu_predict[t], sigma);
+      err_predict[t] = predict[t] - nu_predict[t];
+    }
   }
 }
