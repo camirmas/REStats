@@ -89,3 +89,25 @@ def filter_outliers(data, regions=(3, 12), n_neighbors=100, outlier_threshold=.0
     wt_outliers_r3 = wt_r3.iloc[outliers_r3]
 
     return pd.concat([wt_r1, wt_filtered_r2, wt_filtered_r3])
+
+
+def transform(v_df, m, field="v"):
+    v_scaled = v_df[field]**m
+    hr_group = v_scaled.groupby(v_scaled.index.hour)
+    hr_mean, hr_std = hr_group.mean(), hr_group.std()
+    
+    df = pd.DataFrame({"v": v_df[field], "v_scaled": v_scaled}, index=v_scaled.index)
+    df["hr"] = df.index.hour
+    df["v_scaled_std"] = df.apply(lambda x: (x.v_scaled - hr_mean[x.hr])/hr_std[x.hr], axis=1)
+    
+    return df, (hr_mean, hr_std)
+
+
+def inv_transform(v_df, m, hr_stats):
+    hr_mean, hr_std = hr_stats
+    
+    v_df["hr"] = v_df.index.hour
+
+    inv_std =  v_df.apply(lambda x: x * hr_std[x.hr] + hr_mean[x.hr], axis=1)
+    
+    return inv_std**(1/m)
