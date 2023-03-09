@@ -92,22 +92,28 @@ def filter_outliers(data, regions=(3, 12), n_neighbors=100, outlier_threshold=.0
 
 
 def transform(v_df, m, field="v"):
-    v_scaled = v_df[field]**m
+    res_df = v_df.copy()
+
+    v_scaled = res_df[field]**m
     hr_group = v_scaled.groupby(v_scaled.index.hour)
     hr_mean, hr_std = hr_group.mean(), hr_group.std()
     
-    df = pd.DataFrame({"v": v_df[field], "v_scaled": v_scaled}, index=v_scaled.index)
-    df["hr"] = df.index.hour
-    df["v_scaled_std"] = df.apply(lambda x: (x.v_scaled - hr_mean[x.hr])/hr_std[x.hr], axis=1)
+    res_df["v_scaled"] = v_scaled
+    res_df["v"] = res_df[field]
+    res_df["hr"] = res_df.index.hour
+    res_df["v_scaled_std"] = res_df.apply(lambda x: (x.v_scaled - hr_mean[x.hr])/hr_std[x.hr], axis=1)
     
-    return df, (hr_mean, hr_std)
+    return res_df, (hr_mean, hr_std)
 
 
 def inv_transform(v_df, m, hr_stats):
+    v_df_copy = v_df.copy()
+
     hr_mean, hr_std = hr_stats
     
-    v_df["hr"] = v_df.index.hour
+    v_df_copy["hr"] = v_df_copy.index.hour
 
-    inv_std =  v_df.apply(lambda x: x * hr_std[x.hr] + hr_mean[x.hr], axis=1)
+    inv_std =  v_df_copy.apply(lambda x: x * hr_std[x.hr] + hr_mean[x.hr], axis=1)
+    inv_std = inv_std.drop(columns=["hr"])
     
     return inv_std**(1/m)
