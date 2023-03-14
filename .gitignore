@@ -131,6 +131,7 @@ dmypy.json
 env
 
 data
+figs
 
 *.png
 
