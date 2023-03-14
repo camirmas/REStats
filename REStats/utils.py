@@ -91,12 +91,16 @@ def filter_outliers(data, regions=(3, 12), n_neighbors=100, outlier_threshold=.0
     return pd.concat([wt_r1, wt_filtered_r2, wt_filtered_r3])
 
 
-def transform(v_df, m, field="v"):
+def transform(v_df, m, field="Wind speed", hr_stats=None):
     res_df = v_df.copy()
 
     v_scaled = res_df[field]**m
-    hr_group = v_scaled.groupby(v_scaled.index.hour)
-    hr_mean, hr_std = hr_group.mean(), hr_group.std()
+
+    if hr_stats:
+        hr_mean, hr_std = hr_stats
+    else:
+        hr_group = v_scaled.groupby(v_scaled.index.hour)
+        hr_mean, hr_std = hr_group.mean(), hr_group.std()
     
     res_df["v_scaled"] = v_scaled
     res_df["v"] = res_df[field]
