@@ -41,26 +41,47 @@ def load_SCADA(year=2020):
     return wt
 
 
-def filter_outliers(data, cut_out=None):
-    wt = data.copy()
+def filter_outliers(
+        df: pd.DataFrame,
+        bin_col: str = "wind_speed",
+        outlier_col: str = "power",
+        bin_size: float = .5
+) -> pd.DataFrame:
+    """
+    Filters rows by IQR outliers for `outlier_col` for each bin grouped by `bin_col`.
 
-    if cut_out:
-        wt = wt[wt.wind_speed <= cut_out]
+    Args:
+        df (pd.DataFrame): The input DataFrame.
+        bin_col (str): The column name to use for binning.
+        bin_size (float): The size of each bin for binning by `bin_col`.
+        outlier_col (str): The column name to use for filtering outliers.
 
-    def filter_fn(group):
-        q1 = group.power.quantile(.25)
-        q3 = group.power.quantile(.75)
-        iqr = q3 - q1
-        filtered = group.query('(@q1 - 1.5 * @iqr) <= power <= (@q3 + 1.5 * @iqr)')
-        return filtered
-        
-    wt_bins = np.arange(0, 18, .5)
-    wt_groups = wt.groupby(pd.cut(wt.wind_speed, wt_bins))
-    wt_filtered = wt_groups.apply(filter_fn)
-    wt_filtered.index = wt_filtered.index.droplevel()
-    wt_filtered = wt_filtered.sort_index()
+    Returns:
+        pd.DataFrame: The filtered DataFrame.
+
+    Raises:
+        ValueError: If `bin_col` or `outlier_col` are not columns in `df`.
+        ValueError: If `bin_size` is less than or equal to zero.
+    """
+    # Create bins based on bin_col
+    df['bins'] = pd.cut(df[bin_col], bins=np.arange(df[bin_col].min(), df[bin_col].max() + bin_size, bin_size))
     
-    return wt_filtered
+    # Group by bins and calculate IQR for outlier_col
+    grouped = df.groupby('bins')[outlier_col]
+    q1 = grouped.quantile(0.25)
+    q3 = grouped.quantile(0.75)
+    iqr = q3 - q1
+    
+    # Filter outliers for each bin
+    filtered_df = pd.DataFrame()
+    for name, group in df.groupby('bins'):
+        is_outlier = (group[outlier_col] < (q1[name] - 1.5 * iqr[name])) | (group[outlier_col] > (q3[name] + 1.5 * iqr[name]))
+        filtered_df = pd.concat([filtered_df, group[~is_outlier]])
+    
+    # Drop the bins column and return the filtered dataframe
+    filtered_df.drop('bins', axis=1, inplace=True)
+
+    return filtered_df
 
 
 def transform(v_df, m, field="Wind speed", hr_stats=None):
