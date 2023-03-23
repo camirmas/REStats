@@ -1,25 +1,85 @@
-import pymc as pm
+import arviz as az
+import pyro
+import pyro.distributions as dist
+import pyro.infer
+import pyro.optim
+import torch
+from pyro.infer import MCMC, NUTS, Predictive
+
+
+def weibull_model(data):
+    """
+    Define the Pyro model for fitting a Weibull distribution.
+
+    Args:
+        data (torch.Tensor): A tensor of data samples from a Weibull distribution.
+
+    Returns:
+        None
+    """
+    shape = pyro.sample("shape", dist.Gamma(2, 0.5))
+    scale = pyro.sample("scale", dist.Gamma(1, 0.5))
+
+    with pyro.plate("data", len(data)):
+        pyro.sample("obs", dist.Weibull(scale, shape), obs=data)
 
 
 def fit_weibull(ws):
-    with pm.Model():
-        alpha = pm.HalfNormal("alpha", 1)
-        beta = pm.HalfNormal("beta", 1)
-        y_ = pm.Weibull("y", alpha, beta, observed=ws.values)
-        
-        idata_wb = pm.sample(random_seed=100)
-        pm.sample_posterior_predictive(idata_wb, extend_inferencedata=True, random_seed=100)
-        pm.compute_log_likelihood(idata_wb)
-    
-    return idata_wb
+    """
+    Fits a Weibull distribution to wind speed data using Pyro and MCMC.
+
+    Args:
+        ws (List[float]): A list of wind speed data points.
+
+    Returns:
+        arviz.InferenceData: The fitted Weibull distribution in an `arviz.InferenceData` object.
+    """
+    ws_t = torch.tensor(ws)
+
+    # Set up the MCMC sampler and run it
+    nuts_kernel = NUTS(weibull_model)
+    mcmc = MCMC(nuts_kernel, num_chains=2, num_samples=1000, warmup_steps=500)
+    mcmc.run(ws_t)
+
+    # Generate prior and posterior predictive distributions using `Predictive`
+    prior_predictive = Predictive(weibull_model, num_samples=1000).forward(ws_t)
+    posterior_predictive = Predictive(weibull_model, posterior_samples=mcmc.get_samples()).forward(ws_t)
+
+    # Convert the results to an `arviz.InferenceData` object
+    idata = az.from_pyro(
+        mcmc,
+        prior=prior_predictive,
+        posterior_predictive=posterior_predictive,
+    )
+
+    # Display results
+    return idata
 
 
 def get_params(idata_wb):
-    shape = idata_wb.posterior.alpha.mean(["chain", "draw"]).item(0)
-    scale = idata_wb.posterior.beta.mean(["chain", "draw"]).item(0)
+    """
+    Extract the shape and scale parameters from the fitted Weibull distribution.
+
+    Args:
+        idata_wb (arviz.InferenceData): An `arviz.InferenceData` object containing the fitted Weibull distribution.
+
+    Returns:
+        Tuple[float, float]: A tuple containing the shape and scale parameters.
+    """
+    shape = idata_wb.posterior.shape.mean(["chain", "draw"]).item(0)
+    scale = idata_wb.posterior.scale.mean(["chain", "draw"]).item(0)
 
     return shape, scale
 
 
 def calc_m(shape):
+    """
+    Calculate the Weibull modulus (m) from the shape parameter.
+
+    Args:
+        shape (float): The shape parameter of a Weibull distribution.
+
+    Returns:
+        float: The Weibull modulus (m).
+    """
     return shape / 3.6
