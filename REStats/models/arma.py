@@ -7,7 +7,7 @@ import pandas as pd
 
 
 def backtest(v_train, v_test):
-    idata_wb = fit_weibull(v_train)
+    idata_wb = fit_weibull(v_train.wind_speed)
     shape, _scale = get_params(idata_wb)
     m = calc_m(shape)
 

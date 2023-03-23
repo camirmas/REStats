@@ -84,7 +84,7 @@ def filter_outliers(
     return filtered_df
 
 
-def transform(v_df, m, field="Wind speed", hr_stats=None):
+def transform(v_df, m, field="wind_speed", hr_stats=None):
     res_df = v_df.copy()
 
     v_scaled = res_df[field]**m
