@@ -16,10 +16,13 @@ class ExactGPModel(gpytorch.models.ExactGP):
         train_y (torch.Tensor): Training output data.
         likelihood (gpytorch.likelihoods.Likelihood): Likelihood function.
     """
-    def __init__(self, train_x, train_y, likelihood):
+    def __init__(self, train_x, train_y, likelihood, dims=None):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = ConstantMean()
-        self.covar_module = ScaleKernel(RBFKernel())
+        if dims is None:
+            self.covar_module = ScaleKernel(RBFKernel())
+        else:
+            self.covar_module = ScaleKernel(RBFKernel(ard_num_dims=dims))
 
     def forward(self, x):
         """
@@ -36,7 +39,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
         return MultivariateNormal(mean_x, covar_x)
 
 
-def fit(X_train, y_train):
+def fit(X_train, y_train, dims=None):
     """
     Fits the GP model to the training data.
 
@@ -48,7 +51,7 @@ def fit(X_train, y_train):
         tuple: Tuple of the trained model and the likelihood function.
     """
     likelihood = GaussianLikelihood()
-    model = ExactGPModel(X_train, y_train, likelihood)
+    model = ExactGPModel(X_train, y_train, likelihood, dims=dims)
 
     training_iter = 100
 
@@ -66,13 +69,13 @@ def fit(X_train, y_train):
         # Zero gradients from previous iteration
         optimizer.zero_grad()
         # Output from model
-        output = model(X_train)
+        output = model(X_train)  # Use the same input tensor as during initialization
         # Calc loss and backprop gradients
         loss = -mll(output, y_train)
         loss.backward()
-        print('Iter %d/%d - Loss: %.3f   lengthscale: %.3f   noise: %.3f' % (
+        print('Iter %d/%d - Loss: %.3f   lengthscale: %s   noise: %.3f' % (
             i + 1, training_iter, loss.item(),
-            model.covar_module.base_kernel.lengthscale.item(),
+            str(model.covar_module.base_kernel.lengthscale.tolist()),  # Convert the lengthscale tensor to a list
             model.likelihood.noise.item()
         ))
         optimizer.step()
