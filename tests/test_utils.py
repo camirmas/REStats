@@ -114,6 +114,7 @@ def test_downsample():
     assert "wind_speed" in downsampled_df.columns
     assert "wind_dir" in downsampled_df.columns
     assert "power" in downsampled_df.columns
+    assert "turbulence_intensity" in downsampled_df.columns
 
     # Check if the downsampled wind_speed values are close to the mean of the original data
     for time, group in df.groupby(df.index.hour):
@@ -129,3 +130,8 @@ def test_downsample():
     for time, group in df.groupby(df.index.hour):
         expected_power = group["power"].mean()
         assert downsampled_df.loc[group.index[0].floor("H"), "power"] == pytest.approx(expected_power, abs=1e-6)
+
+    # Check if the downsampled turbulence_intensity values are close to the mean of the original data
+    for time, group in df.groupby(df.index.hour):
+        expected_turbulence_intensity = group["turbulence_intensity"].mean()
+        assert downsampled_df.loc[group.index[0].floor("H"), "turbulence_intensity"] == pytest.approx(expected_turbulence_intensity, abs=1e-6)

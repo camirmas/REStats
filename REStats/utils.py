@@ -181,7 +181,7 @@ def standardize(df, ref_df=None):
     return standardized_df
 
 
-def downsample(df):
+def downsample(df: pd.DataFrame):
     """
     Downsamples a pandas DataFrame containing a 10-minute time series of wind speed and wind direction data to 1 hour.
     
@@ -191,6 +191,9 @@ def downsample(df):
     Returns:
         pd.DataFrame: Downsampled DataFrame with 1-hour resolution.
     """
+    # Calculate turbulence intensity for each 10-minute interval
+    df["turbulence_intensity"] = df["wind_speed"].rolling(window=6).std() / df["wind_speed"].rolling(window=6).mean()
+
     # Resample wind speed using mean
     wind_speed_h = df["wind_speed"].resample("1H").mean()
 
@@ -200,11 +203,15 @@ def downsample(df):
     # Resample power using mean
     power_h = df["power"].resample("1H").mean()
 
+    # Resample turbulence intensity using mean
+    turbulence_intensity_h = df["turbulence_intensity"].resample("1H").mean()
+
     # Combine resampled data into a new DataFrame
     downsampled_df = pd.DataFrame({
         "wind_speed": wind_speed_h,
         "wind_dir": wind_dir_h,
-        "power": power_h
+        "power": power_h,
+        "turbulence_intensity": turbulence_intensity_h
     })
     
     return downsampled_df
