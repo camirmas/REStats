@@ -11,15 +11,14 @@ def test_calc_iec_power_curve():
     data = pd.DataFrame({'wind_speed': wind_speed, 'power': power})
 
     # Define parameters
-    cut_out = 18
     bin_size = 0.5
 
     # Call the function
-    output = calc_iec_power_curve(data, cut_out, bin_size)
+    output = calc_iec_power_curve(data, bin_size)
     output.reset_index(drop=True, inplace=True)
 
     # Prepare the expected output
-    wt_bins = np.arange(0, cut_out, bin_size)
+    wt_bins = np.arange(np.min(wind_speed), np.max(wind_speed), bin_size)
     wt_groups = data.groupby(pd.cut(data.wind_speed, wt_bins))
     expected_output = wt_groups.mean().reset_index(drop=True)
 
@@ -28,14 +27,7 @@ def test_calc_iec_power_curve():
 
     # Test with missing columns
     with pytest.raises(ValueError):
-        calc_iec_power_curve(pd.DataFrame({'wind_speed': [1, 2, 3]}), cut_out, bin_size)
+        calc_iec_power_curve(pd.DataFrame({'wind_speed': [1, 2, 3]}), bin_size)
 
     with pytest.raises(ValueError):
-        calc_iec_power_curve(pd.DataFrame({'power': [100, 200, 300]}), cut_out, bin_size)
-
-    # Test with invalid cut_out
-    with pytest.raises(ValueError):
-        calc_iec_power_curve(data, 0, bin_size)
-
-    with pytest.raises(ValueError):
-        calc_iec_power_curve(data, -1, bin_size)
+        calc_iec_power_curve(pd.DataFrame({'power': [100, 200, 300]}), bin_size)
