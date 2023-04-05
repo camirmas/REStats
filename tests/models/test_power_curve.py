@@ -1,5 +1,8 @@
 import torch
 import pytest
+import gpytorch
+from gpytorch.distributions import MultivariateNormal
+
 from REStats.models.power_curve import ExactGPModel, fit, predict
 from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.distributions import MultivariateNormal
@@ -12,11 +15,46 @@ def dummy_data():
     return train_x, train_y
 
 
-def test_exact_gp_model(dummy_data):
-    train_x, train_y = dummy_data
-    likelihood = GaussianLikelihood()
+
+def test_exact_gp_model_init():
+    train_x = torch.randn(10)
+    train_y = torch.randn(10)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    
     model = ExactGPModel(train_x, train_y, likelihood)
-    assert isinstance(model, ExactGPModel)
+    
+    assert isinstance(model.mean_module, gpytorch.means.ConstantMean)
+    assert isinstance(model.covar_module, gpytorch.kernels.ScaleKernel)
+    assert isinstance(model.covar_module.base_kernel, gpytorch.kernels.RBFKernel)
+
+
+def test_exact_gp_model_forward():
+    train_x = torch.randn(10)
+    train_y = torch.randn(10)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    model = ExactGPModel(train_x, train_y, likelihood)
+
+    # Set the model to evaluation mode
+    model.eval()
+
+    x = torch.randn(5)
+    output = model(x)
+
+    assert isinstance(output, MultivariateNormal)
+    assert output.mean.shape == (5,)
+    assert output.covariance_matrix.shape == (5, 5)
+
+
+def test_prior_predictive_samples():
+    train_x = torch.randn(10)
+    train_y = torch.randn(10)
+    likelihood = gpytorch.likelihoods.GaussianLikelihood()
+    model = ExactGPModel(train_x, train_y, likelihood)
+
+    x = torch.linspace(-5, 5, 100)
+    samples = model.prior_predictive_samples(x, n_samples=5)
+
+    assert samples.shape == (5, 100)
 
 
 def test_fit(dummy_data):

@@ -36,7 +36,28 @@ class ExactGPModel(gpytorch.models.ExactGP):
         """
         mean_x = self.mean_module(x)
         covar_x = self.covar_module(x)
+
         return MultivariateNormal(mean_x, covar_x)
+    
+
+    def prior_predictive_samples(self, x, n_samples=1):
+        """
+        Generate prior predictive samples for the given inputs.
+
+        Args:
+            x (torch.Tensor): Input data.
+            n_samples (int): Number of samples to generate.
+
+        Returns:
+            torch.Tensor: Prior predictive samples.
+        """
+        # Get prior distribution
+        prior_dist = self.forward(x)
+        
+        # Generate samples
+        samples = prior_dist.sample(torch.Size([n_samples]))
+        
+        return samples
 
 
 def fit(X_train, y_train, dims=None):
