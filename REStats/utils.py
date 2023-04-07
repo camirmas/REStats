@@ -2,7 +2,8 @@ import os
 
 import numpy as np
 import pandas as pd
-from scipy.stats import circmean, circstd
+
+from REStats.circular_metrics import circular_mean, circular_std
 
 
 def load_SCADA(year=2020):
@@ -30,7 +31,7 @@ def load_SCADA(year=2020):
     curr_dir = os.path.dirname(os.path.abspath(__file__))
 
     # wt_2019 = pd.read_csv("../data/Kelmarsh_SCADA_2019/Turbine_Data_Kelmarsh_1_2019-01-01_-_2020-01-01_228.csv", header=9)
-    wt_raw = pd.read_csv(f"{curr_dir}/../data/Kelmarsh_SCADA_{year}/Turbine_Data_Kelmarsh_1_{2020}-01-01_-_{year+1}-01-01_228.csv", header=9)
+    wt_raw = pd.read_csv(f"{curr_dir}/../data/Kelmarsh_SCADA_{year}/Turbine_Data_Kelmarsh_1_{year}-01-01_-_{year+1}-01-01_228.csv", header=9)
 
     wt = wt_raw.loc[:, ["# Date and time", "Power (kW)", "Wind direction (°)", "Wind speed (m/s)"]]
     wt = wt.rename(columns={"# Date and time": "Date", "Power (kW)": "power", "Wind direction (°)": "wind_dir", "Wind speed (m/s)": "wind_speed"})
@@ -115,34 +116,6 @@ def inv_transform(v_df, m, hr_stats):
     inv_std = inv_std.drop(columns=["hr"])
     
     return inv_std**(1/m)
-
-
-def circular_mean(data):
-    """
-    Calculates the circular mean of the given data.
-
-    Args:
-        data (array-like): Input data in degrees.
-
-    Returns:
-        float: Circular mean in degrees.
-    """
-    data_rad = np.deg2rad(data)
-    return np.rad2deg(circmean(data_rad))
-
-
-def circular_std(data):
-    """
-    Calculates the circular standard deviation of the given data.
-
-    Args:
-        data (array-like): Input data in degrees.
-
-    Returns:
-        float: Circular standard deviation in degrees.
-    """
-    data_rad = np.deg2rad(data)
-    return np.rad2deg(circstd(data_rad))
 
 
 def standardize(df, ref_df=None):
