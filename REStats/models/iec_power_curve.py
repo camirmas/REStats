@@ -20,7 +20,7 @@ def calc_iec_power_curve(data: pd.DataFrame, bin_size: float = 0.5) -> pd.DataFr
         raise ValueError("Input DataFrame must contain 'wind_speed' and 'power' columns.")
 
     min_ws = np.floor(np.min(data.wind_speed))
-    max_ws = np.ceil(np.max(data.wind_speed))
+    max_ws = np.ceil(np.max(data.wind_speed) + bin_size)
     wt_bins = np.arange(min_ws, max_ws, bin_size)
     wt_groups = data.groupby(pd.cut(data.wind_speed, wt_bins))
     wt_iec = wt_groups.mean()

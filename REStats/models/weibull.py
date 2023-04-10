@@ -5,6 +5,8 @@ import pyro.infer
 import pyro.optim
 import torch
 from pyro.infer import MCMC, NUTS, Predictive
+import matplotlib.pyplot as plt
+import numpy as np
 
 
 def weibull_model(data):
@@ -83,3 +85,21 @@ def calc_m(shape):
         float: The Weibull modulus (m).
     """
     return shape / 3.6
+
+
+def plot_prior_samples(idata_wb):
+    fig, ax = plt.subplots()
+    ax.set_title("Weibull prior distributions")
+
+    shapes = idata_wb.prior.shape[0, :10]
+    scales = idata_wb.prior.scale[0, :10]
+
+    x = np.linspace(0, 5, 500)
+
+    def weib(x, scale, shape):
+        return (shape / scale) * (x / scale)**(shape - 1) * np.exp(-(x / scale)**shape)
+
+    for shape, scale in np.array([shapes, scales]).T:
+        ax.plot(x, scale * weib(x, scale, shape))
+        
+    return fig
