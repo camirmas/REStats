@@ -132,24 +132,26 @@ def standardize(df, ref_df=None):
 
     # Standardize wind_speed and power
     for col in ["wind_speed", "power"]:
-        if ref_df is None:
-            mean = df[col].mean()
-            std = df[col].std()
-        else:
-            mean = ref_df[col].mean()
-            std = ref_df[col].std()
+        if col in df.columns:
+            if ref_df is None:
+                mean = df[col].mean()
+                std = df[col].std()
+            else:
+                mean = ref_df[col].mean()
+                std = ref_df[col].std()
 
-        standardized_df[col] = (df[col] - mean) / std
+            standardized_df[col] = (df[col] - mean) / std
 
     # Standardize wind_dir (circular data)
-    if ref_df is None:
-        mean_wind_dir = circular_mean(df["wind_dir"])
-        std_wind_dir = circular_std(df["wind_dir"])
-    else:
-        mean_wind_dir = circular_mean(ref_df["wind_dir"])
-        std_wind_dir = circular_std(ref_df["wind_dir"])
+    if "wind_dir" in df.columns:
+        if ref_df is None:
+            mean_wind_dir = circular_mean(df["wind_dir"])
+            std_wind_dir = circular_std(df["wind_dir"])
+        else:
+            mean_wind_dir = circular_mean(ref_df["wind_dir"])
+            std_wind_dir = circular_std(ref_df["wind_dir"])
 
-    standardized_df["wind_dir"] = ((df["wind_dir"] - mean_wind_dir) / std_wind_dir)
+        standardized_df["wind_dir"] = ((df["wind_dir"] - mean_wind_dir) / std_wind_dir)
 
     return standardized_df
 
