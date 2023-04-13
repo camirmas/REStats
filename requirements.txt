@@ -1,1 +1,12 @@
-git+https://github.com/camirmas/albatross.git
+numpy
+pandas
+torch
+gpytorch
+pyro-ppl
+scikit-learn
+statsmodels
+arviz
+seaborn
+matplotlib
+git+https://github.com/NREL/electrolyzer.git@develop
+pytest
