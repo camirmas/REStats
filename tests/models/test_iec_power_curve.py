@@ -18,7 +18,7 @@ def test_calc_iec_power_curve():
     output.reset_index(drop=True, inplace=True)
 
     # Prepare the expected output
-    wt_bins = np.arange(np.min(wind_speed), np.max(wind_speed), bin_size)
+    wt_bins = np.arange(np.min(wind_speed), np.ceil(np.max(wind_speed)) + bin_size, bin_size)
     wt_groups = data.groupby(pd.cut(data.wind_speed, wt_bins))
     expected_output = wt_groups.mean().reset_index(drop=True)
 

@@ -19,8 +19,10 @@ def weibull_model(data):
     Returns:
         None
     """
-    shape = pyro.sample("shape", dist.Gamma(2, 0.5))
-    scale = pyro.sample("scale", dist.Gamma(1, 0.5))
+    mu = np.log(data.mean())
+
+    shape = pyro.sample("shape", dist.Gamma(2, 1))
+    scale = pyro.sample("scale", dist.LogNormal(mu, 0.5))
 
     with pyro.plate("data", len(data)):
         pyro.sample("obs", dist.Weibull(scale, shape), obs=data)
@@ -94,7 +96,7 @@ def plot_prior_samples(idata_wb):
     shapes = idata_wb.prior.shape[0, :10]
     scales = idata_wb.prior.scale[0, :10]
 
-    x = np.linspace(0, 5, 500)
+    x = np.linspace(0, 12, 500)
 
     def weib(x, scale, shape):
         return (shape / scale) * (x / scale)**(shape - 1) * np.exp(-(x / scale)**shape)
