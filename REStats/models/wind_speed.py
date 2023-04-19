@@ -29,18 +29,23 @@ def backtest(v_train, v_test):
     forecasts_full = pd.concat(forecasts)
 
     fcast_rmse = mean_squared_error(v_test.v[1:], forecasts_full["mean"], squared=False)
-    print("Forecast RMSE:", fcast_rmse)
+    fcast_rmse_rel = fcast_rmse / v_test.v[1:].mean() * 100
+    print(f"Forecast RMSE: {fcast_rmse} m/s")
+    print(f"Forecast RMSE (%): {fcast_rmse_rel}")
     fcast_mae = abs(v_test.v[1:] - forecasts_full["mean"]).mean()
-    print("Forecast MAE:", fcast_mae)
+    print(f"Forecast MAE: {fcast_mae} m/s")
 
-    return forecasts_full, (fcast_rmse, fcast_mae)
+    return forecasts_full, (fcast_rmse, fcast_rmse_rel, fcast_mae)
 
 
 def persistence_wind_speed(v_test):
     per = v_test.shift(1)[1:]
     per_rmse = mean_squared_error(v_test[1:], per, squared=False)
-    print("PER RMSE:", per_rmse)
+    per_rmse_rel = per_rmse / v_test[1:].mean() * 100
     per_mae = abs(v_test[1:] - per).mean()
-    print("PER MAE:", per_mae)
+
+    print(f"PER RMSE: {per_rmse} m/s")
+    print(f"PER RMSE (%): {per_rmse_rel}")
+    print(f"PER MAE: {per_mae} m/s")
 
     return per_rmse, per_mae
