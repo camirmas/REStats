@@ -10,3 +10,4 @@ seaborn
 matplotlib
 git+https://github.com/NREL/electrolyzer.git@develop
 pytest
+windrose
