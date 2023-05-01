@@ -1,12 +1,12 @@
-import arviz as az
 import pyro
-import pyro.distributions as dist
+import arviz as az
+import numpy as np
+import torch
 import pyro.infer
 import pyro.optim
-import torch
-from pyro.infer import MCMC, NUTS, Predictive
 import matplotlib.pyplot as plt
-import numpy as np
+import pyro.distributions as dist
+from pyro.infer import MCMC, NUTS, Predictive
 
 
 def weibull_model(data):
@@ -36,7 +36,8 @@ def fit_weibull(ws):
         ws (List[float]): A list of wind speed data points.
 
     Returns:
-        arviz.InferenceData: The fitted Weibull distribution in an `arviz.InferenceData` object.
+        arviz.InferenceData: The fitted Weibull distribution in an `arviz.InferenceData`
+            object.
     """
     ws_t = torch.tensor(ws)
 
@@ -47,7 +48,9 @@ def fit_weibull(ws):
 
     # Generate prior and posterior predictive distributions using `Predictive`
     prior_predictive = Predictive(weibull_model, num_samples=1000).forward(ws_t)
-    posterior_predictive = Predictive(weibull_model, posterior_samples=mcmc.get_samples()).forward(ws_t)
+    posterior_predictive = Predictive(
+        weibull_model, posterior_samples=mcmc.get_samples()
+    ).forward(ws_t)
 
     # Convert the results to an `arviz.InferenceData` object
     idata = az.from_pyro(
@@ -65,7 +68,8 @@ def get_params(idata_wb):
     Extract the shape and scale parameters from the fitted Weibull distribution.
 
     Args:
-        idata_wb (arviz.InferenceData): An `arviz.InferenceData` object containing the fitted Weibull distribution.
+        idata_wb (arviz.InferenceData): An `arviz.InferenceData` object containing the
+            fitted Weibull distribution.
 
     Returns:
         Tuple[float, float]: A tuple containing the shape and scale parameters.
@@ -99,9 +103,13 @@ def plot_prior_samples(idata_wb):
     x = np.linspace(0, 12, 500)
 
     def weib(x, scale, shape):
-        return (shape / scale) * (x / scale)**(shape - 1) * np.exp(-(x / scale)**shape)
+        return (
+            (shape / scale)
+            * (x / scale) ** (shape - 1)
+            * np.exp(-((x / scale) ** shape))
+        )
 
     for shape, scale in np.array([shapes, scales]).T:
         ax.plot(x, scale * weib(x, scale, shape))
-        
+
     return fig

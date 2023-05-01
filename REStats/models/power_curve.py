@@ -1,9 +1,9 @@
 import torch
 import gpytorch
-from gpytorch.kernels import ScaleKernel, RBFKernel
-from gpytorch.means import ConstantMean
-from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.mlls import ExactMarginalLogLikelihood
+from gpytorch.means import ConstantMean
+from gpytorch.kernels import RBFKernel, ScaleKernel
+from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.distributions import MultivariateNormal
 
 
@@ -16,6 +16,7 @@ class ExactGPModel(gpytorch.models.ExactGP):
         train_y (torch.Tensor): Training output data.
         likelihood (gpytorch.likelihoods.Likelihood): Likelihood function.
     """
+
     def __init__(self, train_x, train_y, likelihood, dims=None):
         super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
         self.mean_module = ConstantMean()
@@ -38,7 +39,6 @@ class ExactGPModel(gpytorch.models.ExactGP):
         covar_x = self.covar_module(x)
 
         return MultivariateNormal(mean_x, covar_x)
-    
 
     def prior_predictive_samples(self, x, n_samples=1):
         """
@@ -53,10 +53,10 @@ class ExactGPModel(gpytorch.models.ExactGP):
         """
         # Get prior distribution
         prior_dist = self.forward(x)
-        
+
         # Generate samples
         samples = prior_dist.sample(torch.Size([n_samples]))
-        
+
         return samples
 
 
@@ -81,7 +81,9 @@ def fit(X_train, y_train, dims=None):
     likelihood.train()
 
     # Use the adam optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.1)  # Includes GaussianLikelihood parameters
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=0.1
+    )  # Includes GaussianLikelihood parameters
 
     # "Loss" for GPs - the marginal log likelihood
     mll = ExactMarginalLogLikelihood(likelihood, model)
@@ -94,11 +96,18 @@ def fit(X_train, y_train, dims=None):
         # Calc loss and backprop gradients
         loss = -mll(output, y_train)
         loss.backward()
-        print('Iter %d/%d - Loss: %.3f   lengthscale: %s   noise: %.3f' % (
-            i + 1, training_iter, loss.item(),
-            str(model.covar_module.base_kernel.lengthscale.tolist()),  # Convert the lengthscale tensor to a list
-            model.likelihood.noise.item()
-        ))
+        print(
+            "Iter %d/%d - Loss: %.3f   lengthscale: %s   noise: %.3f"
+            % (
+                i + 1,
+                training_iter,
+                loss.item(),
+                str(
+                    model.covar_module.base_kernel.lengthscale.tolist()
+                ),  # Convert the lengthscale tensor to a list
+                model.likelihood.noise.item(),
+            )
+        )
         optimizer.step()
 
     return model, likelihood
@@ -124,5 +133,5 @@ def predict(model, likelihood, data):
     # Make predictions by feeding model through likelihood
     with torch.no_grad(), gpytorch.settings.fast_pred_var():
         pred = likelihood(model(data))
-    
+
     return pred

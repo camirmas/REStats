@@ -1,11 +1,12 @@
-import pytest
-import torch
-import numpy as np
 import pyro
+import numpy as np
+import torch
+import pytest
+
 # from pyro.infer import MCMC, NUTS, Predictive
 from pyro.distributions import Weibull
 
-from REStats.models.weibull import weibull_model, fit_weibull, get_params, calc_m
+from REStats.models.weibull import calc_m, get_params, fit_weibull, weibull_model
 
 
 @pytest.fixture

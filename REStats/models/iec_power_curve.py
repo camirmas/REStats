@@ -1,5 +1,5 @@
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 def calc_iec_power_curve(data: pd.DataFrame, bin_size: float = 0.5) -> pd.DataFrame:
@@ -7,17 +7,21 @@ def calc_iec_power_curve(data: pd.DataFrame, bin_size: float = 0.5) -> pd.DataFr
     Calculates the IEC power curve for wind turbine data.
 
     Args:
-        data (pd.DataFrame): The input DataFrame containing wind turbine data, with columns "wind_speed" and "power".
+        data (pd.DataFrame): The input DataFrame containing wind turbine data, with
+            columns "wind_speed" and "power".
         bin_size (float, optional): The size of each bin. Defaults to 0.5.
 
     Returns:
-        pd.DataFrame: The IEC power curve DataFrame, with columns "wind_speed" and "power".
+        pd.DataFrame: The IEC power curve DataFrame, with columns "wind_speed" and
+            "power".
 
     Raises:
         ValueError: If "wind_speed" or "power" columns are not in `data`.
     """
-    if 'wind_speed' not in data.columns or 'power' not in data.columns:
-        raise ValueError("Input DataFrame must contain 'wind_speed' and 'power' columns.")
+    if "wind_speed" not in data.columns or "power" not in data.columns:
+        raise ValueError(
+            "Input DataFrame must contain 'wind_speed' and 'power' columns."
+        )
 
     min_ws = np.floor(np.min(data.wind_speed))
     max_ws = np.ceil(np.max(data.wind_speed)) + bin_size

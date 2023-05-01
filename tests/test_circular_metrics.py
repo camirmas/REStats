@@ -1,5 +1,6 @@
 import numpy as np
-from REStats.circular_metrics import circular_mean, circular_std, circular_rmse, circular_mae
+
+from REStats.circular_metrics import circular_mae, circular_rmse
 
 
 def test_circular_rmse():

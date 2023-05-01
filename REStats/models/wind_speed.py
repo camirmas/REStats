@@ -1,9 +1,10 @@
-from statsmodels.tsa.arima.model import ARIMA
+import pandas as pd
 from sklearn.metrics import mean_squared_error
+from statsmodels.tsa.arima.model import ARIMA
 
 from REStats.utils import transform, inv_transform
-from .weibull import fit_weibull, get_params, calc_m
-import pandas as pd
+
+from .weibull import calc_m, get_params, fit_weibull
 
 
 def backtest(v_train, v_test):
@@ -19,13 +20,13 @@ def backtest(v_train, v_test):
     arma_mod = ARIMA(v_train.v_scaled_std, order=(2, 0, 2), trend="n")
     arma_res = arma_mod.fit()
 
-    for t in range(len(v_test)-1):
-        updated = v_test.v_scaled_std.iloc[t:t+1]
+    for t in range(len(v_test) - 1):
+        updated = v_test.v_scaled_std.iloc[t : t + 1]
         arma_res = arma_res.append(updated, refit=False)
         fcast = arma_res.get_forecast().summary_frame()
         inv_fcast = inv_transform(fcast, m, hr_stats)
         forecasts.append(inv_fcast)
-    
+
     forecasts_full = pd.concat(forecasts)
 
     fcast_rmse = mean_squared_error(v_test.v[1:], forecasts_full["mean"], squared=False)

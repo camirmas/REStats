@@ -19,3 +19,19 @@ classifiers = [
 
 [tool.setuptools]
 packages = ["REStats"]
+
+[tool.black]
+line-length = 88
+target-version = ["py37", "py38", "py39"]
+include = '\.pyi?$'
+
+[tool.isort]
+multi_line_output = 3
+ensure_newline_before_comments = true
+combine_as_imports = true
+force_grid_wrap = 0
+include_trailing_comma = true
+use_parentheses = true
+length_sort = true
+lines_after_imports = 2
+line_length = 88

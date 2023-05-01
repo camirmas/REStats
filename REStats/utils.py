@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from REStats.circular_metrics import circular_mean, circular_std
+from REStats.circular_metrics import circular_std, circular_mean
 
 
 def load_SCADA(year=2020):
@@ -13,11 +13,11 @@ def load_SCADA(year=2020):
 
     # FNAMES = [
     #     "Turbine_Data_Kelmarsh_1_2020-01-01_-_2021-01-01_228.csv",
-        # "Turbine_Data_Kelmarsh_2_2020-01-01_-_2021-01-01_229.csv",
-        # "Turbine_Data_Kelmarsh_3_2020-01-01_-_2021-01-01_230.csv",
-        # "Turbine_Data_Kelmarsh_4_2020-01-01_-_2021-01-01_231.csv",
-        # "Turbine_Data_Kelmarsh_5_2020-01-01_-_2021-01-01_232.csv",
-        # "Turbine_Data_Kelmarsh_6_2020-01-01_-_2021-01-01_233.csv",
+    # "Turbine_Data_Kelmarsh_2_2020-01-01_-_2021-01-01_229.csv",
+    # "Turbine_Data_Kelmarsh_3_2020-01-01_-_2021-01-01_230.csv",
+    # "Turbine_Data_Kelmarsh_4_2020-01-01_-_2021-01-01_231.csv",
+    # "Turbine_Data_Kelmarsh_5_2020-01-01_-_2021-01-01_232.csv",
+    # "Turbine_Data_Kelmarsh_6_2020-01-01_-_2021-01-01_233.csv",
     # ]
 
     # turbines = []
@@ -30,11 +30,24 @@ def load_SCADA(year=2020):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
 
-    # wt_2019 = pd.read_csv("../data/Kelmarsh_SCADA_2019/Turbine_Data_Kelmarsh_1_2019-01-01_-_2020-01-01_228.csv", header=9)
-    wt_raw = pd.read_csv(f"{curr_dir}/../data/Kelmarsh_SCADA_{year}/Turbine_Data_Kelmarsh_1_{year}-01-01_-_{year+1}-01-01_228.csv", header=9)
+    file_name = (
+        f"{curr_dir}/../data/Kelmarsh_SCADA_{year}/"
+        f"Turbine_Data_Kelmarsh_1_{year}-01-01_-_{year+1}-01-01_228.csv"
+    )
 
-    wt = wt_raw.loc[:, ["# Date and time", "Power (kW)", "Wind direction (°)", "Wind speed (m/s)"]]
-    wt = wt.rename(columns={"# Date and time": "Date", "Power (kW)": "power", "Wind direction (°)": "wind_dir", "Wind speed (m/s)": "wind_speed"})
+    wt_raw = pd.read_csv(file_name, header=9)
+
+    wt = wt_raw.loc[
+        :, ["# Date and time", "Power (kW)", "Wind direction (°)", "Wind speed (m/s)"]
+    ]
+    wt = wt.rename(
+        columns={
+            "# Date and time": "Date",
+            "Power (kW)": "power",
+            "Wind direction (°)": "wind_dir",
+            "Wind speed (m/s)": "wind_speed",
+        }
+    )
     wt["Date"] = pd.to_datetime(wt["Date"].astype("datetime64"))
     wt = wt.set_index("Date")
     wt = wt.asfreq("10min")
@@ -44,10 +57,10 @@ def load_SCADA(year=2020):
 
 
 def filter_outliers(
-        df: pd.DataFrame,
-        bin_col: str = "wind_speed",
-        outlier_col: str = "power",
-        bin_size: float = .5
+    df: pd.DataFrame,
+    bin_col: str = "wind_speed",
+    outlier_col: str = "power",
+    bin_size: float = 0.5,
 ) -> pd.DataFrame:
     """
     Filters rows by IQR outliers for `outlier_col` for each bin grouped by `bin_col`.
@@ -66,20 +79,25 @@ def filter_outliers(
         ValueError: If `bin_size` is less than or equal to zero.
     """
     # Create bins based on bin_col
-    df["bins"] = pd.cut(df[bin_col], bins=np.arange(df[bin_col].min(), df[bin_col].max() + bin_size, bin_size))
-    
+    df["bins"] = pd.cut(
+        df[bin_col],
+        bins=np.arange(df[bin_col].min(), df[bin_col].max() + bin_size, bin_size),
+    )
+
     # Group by bins and calculate IQR for outlier_col
     grouped = df.groupby("bins")[outlier_col]
     q1 = grouped.quantile(0.25)
     q3 = grouped.quantile(0.75)
     iqr = q3 - q1
-    
+
     # Filter outliers for each bin
     filtered_df = pd.DataFrame()
     for name, group in df.groupby("bins"):
-        is_outlier = (group[outlier_col] < (q1[name] - 1.5 * iqr[name])) | (group[outlier_col] > (q3[name] + 1.5 * iqr[name]))
+        is_outlier = (group[outlier_col] < (q1[name] - 1.5 * iqr[name])) | (
+            group[outlier_col] > (q3[name] + 1.5 * iqr[name])
+        )
         filtered_df = pd.concat([filtered_df, group[~is_outlier]])
-    
+
     # Drop the bins column and return the filtered dataframe
     filtered_df.drop("bins", axis=1, inplace=True)
 
@@ -89,19 +107,21 @@ def filter_outliers(
 def transform(v_df, m, field="wind_speed", hr_stats=None):
     res_df = v_df.copy()
 
-    v_scaled = res_df[field]**m
+    v_scaled = res_df[field] ** m
 
     if hr_stats:
         hr_mean, hr_std = hr_stats
     else:
         hr_group = v_scaled.groupby(v_scaled.index.hour)
         hr_mean, hr_std = hr_group.mean(), hr_group.std()
-    
+
     res_df["v_scaled"] = v_scaled
     res_df["v"] = res_df[field]
     res_df["hr"] = res_df.index.hour
-    res_df["v_scaled_std"] = res_df.apply(lambda x: (x.v_scaled - hr_mean[x.hr])/hr_std[x.hr], axis=1)
-    
+    res_df["v_scaled_std"] = res_df.apply(
+        lambda x: (x.v_scaled - hr_mean[x.hr]) / hr_std[x.hr], axis=1
+    )
+
     return res_df, (hr_mean, hr_std)
 
 
@@ -109,13 +129,13 @@ def inv_transform(v_df, m, hr_stats):
     v_df_copy = v_df.copy()
 
     hr_mean, hr_std = hr_stats
-    
+
     v_df_copy["hr"] = v_df_copy.index.hour
 
-    inv_std =  v_df_copy.apply(lambda x: x * hr_std[x.hr] + hr_mean[x.hr], axis=1)
+    inv_std = v_df_copy.apply(lambda x: x * hr_std[x.hr] + hr_mean[x.hr], axis=1)
     inv_std = inv_std.drop(columns=["hr"])
-    
-    return inv_std**(1/m)
+
+    return inv_std ** (1 / m)
 
 
 def standardize(df, ref_df=None):
@@ -123,7 +143,8 @@ def standardize(df, ref_df=None):
     Standardizes a DataFrame containing wind_speed, wind_dir, and power columns.
 
     Args:
-        df (pandas.DataFrame): DataFrame containing wind_speed, wind_dir, and power columns.
+        df (pandas.DataFrame): DataFrame containing wind_speed, wind_dir, and
+            power columns.
 
     Returns:
         pandas.DataFrame: Standardized DataFrame.
@@ -151,23 +172,28 @@ def standardize(df, ref_df=None):
             mean_wind_dir = circular_mean(ref_df["wind_dir"])
             std_wind_dir = circular_std(ref_df["wind_dir"])
 
-        standardized_df["wind_dir"] = ((df["wind_dir"] - mean_wind_dir) / std_wind_dir)
+        standardized_df["wind_dir"] = (df["wind_dir"] - mean_wind_dir) / std_wind_dir
 
     return standardized_df
 
 
 def downsample(df: pd.DataFrame):
     """
-    Downsamples a pandas DataFrame containing a 10-minute time series of wind speed and wind direction data to 1 hour.
-    
+    Downsamples a pandas DataFrame containing a 10-minute time series of wind speed and
+        wind direction data to 1 hour.
+
     Args:
-        df (pd.DataFrame): DataFrame with a DatetimeIndex, containing "wind_speed" and "wind_dir" columns.
-        
+        df (pd.DataFrame): DataFrame with a DatetimeIndex, containing "wind_speed" and
+            "wind_dir" columns.
+
     Returns:
         pd.DataFrame: Downsampled DataFrame with 1-hour resolution.
     """
     # Calculate turbulence intensity for each 10-minute interval
-    df["turbulence_intensity"] = df["wind_speed"].rolling(window=6).std() / df["wind_speed"].rolling(window=6).mean()
+    df["turbulence_intensity"] = (
+        df["wind_speed"].rolling(window=6).std()
+        / df["wind_speed"].rolling(window=6).mean()
+    )
 
     # Resample wind speed using mean
     wind_speed_h = df["wind_speed"].resample("1H").mean()
@@ -182,11 +208,13 @@ def downsample(df: pd.DataFrame):
     turbulence_intensity_h = df["turbulence_intensity"].resample("1H").mean()
 
     # Combine resampled data into a new DataFrame
-    downsampled_df = pd.DataFrame({
-        "wind_speed": wind_speed_h,
-        "wind_dir": wind_dir_h,
-        "power": power_h,
-        "turbulence_intensity": turbulence_intensity_h
-    })
-    
+    downsampled_df = pd.DataFrame(
+        {
+            "wind_speed": wind_speed_h,
+            "wind_dir": wind_dir_h,
+            "power": power_h,
+            "turbulence_intensity": turbulence_intensity_h,
+        }
+    )
+
     return downsampled_df

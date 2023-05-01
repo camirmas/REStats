@@ -1,11 +1,10 @@
 import torch
 import pytest
 import gpytorch
+from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.distributions import MultivariateNormal
 
 from REStats.models.power_curve import ExactGPModel, fit, predict
-from gpytorch.likelihoods import GaussianLikelihood
-from gpytorch.distributions import MultivariateNormal
 
 
 @pytest.fixture
@@ -15,14 +14,13 @@ def dummy_data():
     return train_x, train_y
 
 
-
 def test_exact_gp_model_init():
     train_x = torch.randn(10)
     train_y = torch.randn(10)
     likelihood = gpytorch.likelihoods.GaussianLikelihood()
-    
+
     model = ExactGPModel(train_x, train_y, likelihood)
-    
+
     assert isinstance(model.mean_module, gpytorch.means.ConstantMean)
     assert isinstance(model.covar_module, gpytorch.kernels.ScaleKernel)
     assert isinstance(model.covar_module.base_kernel, gpytorch.kernels.RBFKernel)
