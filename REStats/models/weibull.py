@@ -19,10 +19,8 @@ def weibull_model(data):
     Returns:
         None
     """
-    mu = np.log(data.mean())
-
-    shape = pyro.sample("shape", dist.Gamma(2, 1))
-    scale = pyro.sample("scale", dist.LogNormal(mu, 0.5))
+    shape = pyro.sample("shape", dist.Gamma(2.5, 1))
+    scale = pyro.sample("scale", dist.Gamma(3, 0.5))
 
     with pyro.plate("data", len(data)):
         pyro.sample("obs", dist.Weibull(scale, shape), obs=data)
@@ -96,11 +94,15 @@ def calc_m(shape):
 def plot_prior_samples(idata_wb):
     fig, ax = plt.subplots()
     ax.set_title("Weibull prior distributions")
+    ax.set_xmargin(0)
+    ax.set_xlabel("Wind Speed (m/s)")
+    ax.set_ylabel("Density")
+    ax.set_ylim(top=2.5)
 
     shapes = idata_wb.prior.shape[0, :10]
     scales = idata_wb.prior.scale[0, :10]
 
-    x = np.linspace(0, 12, 500)
+    x = np.linspace(0, 16, 500)
 
     def weib(x, scale, shape):
         return (
