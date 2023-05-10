@@ -81,3 +81,32 @@ def circular_mae(true_values, predicted_values):
     mae = np.mean(absolute_errors)
 
     return mae
+
+
+def circular_residuals(true_degrees, predicted_degrees):
+    """
+    Compute the circular residuals between true and predicted wind direction values in
+    degrees.
+
+    This function takes into account the circular nature of wind direction data when
+    calculating residuals. The residuals are computed as the angular differences
+    between true and predicted values, resulting in values between -180 and 180 degrees.
+
+    Args:
+        true_degrees (array_like): A 1D array or list of true wind direction values
+            in degrees.
+        predicted_degrees (array_like): A 1D array or list of predicted wind direction
+            values in degrees, corresponding to the true_degrees.
+
+    Returns:
+        numpy.ndarray: A 1D numpy array of circular residuals in degrees.
+    """
+    true_radians = np.radians(true_degrees)
+    predicted_radians = np.radians(predicted_degrees)
+
+    residuals_radians = np.arctan2(
+        np.sin(true_radians - predicted_radians),
+        np.cos(true_radians - predicted_radians),
+    )
+    residuals_degrees = np.degrees(residuals_radians)
+    return residuals_degrees

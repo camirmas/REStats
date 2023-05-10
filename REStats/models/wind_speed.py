@@ -4,16 +4,15 @@ from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 
 from REStats.utils import transform, inv_transform
-
-from .weibull import calc_m, get_params, fit_weibull
+from REStats.models import weibull
 
 
 def backtest(v_train, v_test, idata_wb=None, steps=1):
     if idata_wb is None:
-        idata_wb = fit_weibull(v_train.wind_speed)
+        idata_wb = weibull.fit(v_train.wind_speed)
 
-    shape, _scale = get_params(idata_wb)
-    m = calc_m(shape)
+    shape, _scale = weibull.get_params(idata_wb)
+    m = weibull.calc_m(shape)
 
     forecasts = []
 
@@ -47,7 +46,7 @@ def backtest(v_train, v_test, idata_wb=None, steps=1):
     return forecasts_full, (fcast_rmse, fcast_rmse_rel, fcast_mae)
 
 
-def persistence_wind_speed(v_test, steps=1):
+def calc_persistence(v_test, steps=1):
     per = np.empty(len(v_test))
 
     t = 0
@@ -66,4 +65,4 @@ def persistence_wind_speed(v_test, steps=1):
     print(f"PER RMSE (%): {per_rmse_rel}")
     print(f"PER MAE: {per_mae} m/s")
 
-    return per_rmse, per_rmse_rel, per_mae
+    return per, (per_rmse, per_rmse_rel, per_mae)

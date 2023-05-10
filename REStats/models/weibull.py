@@ -26,9 +26,9 @@ def weibull_model(data):
         pyro.sample("obs", dist.Weibull(scale, shape), obs=data)
 
 
-def fit_weibull(ws):
+def fit(ws):
     """
-    Fits a Weibull distribution to wind speed data using Pyro and MCMC.
+    Fit a Weibull distribution to wind speed data using Pyro and MCMC.
 
     Args:
         ws (List[float]): A list of wind speed data points.

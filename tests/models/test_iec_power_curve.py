@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from REStats.models import calc_iec_power_curve
+from REStats.models.iec_power_curve import fit
 
 
 def test_calc_iec_power_curve():
@@ -15,7 +15,7 @@ def test_calc_iec_power_curve():
     bin_size = 0.5
 
     # Call the function
-    output = calc_iec_power_curve(data, bin_size)
+    output = fit(data, bin_size)
     output.reset_index(drop=True, inplace=True)
 
     # Prepare the expected output
@@ -32,7 +32,7 @@ def test_calc_iec_power_curve():
 
     # Test with missing columns
     with pytest.raises(ValueError):
-        calc_iec_power_curve(pd.DataFrame({"wind_speed": [1, 2, 3]}), bin_size)
+        fit(pd.DataFrame({"wind_speed": [1, 2, 3]}), bin_size)
 
     with pytest.raises(ValueError):
-        calc_iec_power_curve(pd.DataFrame({"power": [100, 200, 300]}), bin_size)
+        fit(pd.DataFrame({"power": [100, 200, 300]}), bin_size)

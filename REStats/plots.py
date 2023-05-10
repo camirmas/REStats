@@ -1,5 +1,6 @@
 import os
 
+import numpy as np
 import matplotlib.pyplot as plt
 from windrose import WindroseAxes
 
@@ -48,5 +49,44 @@ def plot_wind_rose(
     # Show legend
     if legend:
         ax.set_legend()
+
+    return fig
+
+
+def plot_circular_histogram(true_directions, predicted_directions, num_bins=36):
+    """
+    Plot a circular histogram of true and predicted wind direction values in degrees.
+
+    Args:
+        true_directions (array_like): A 1D array or list of true wind direction values
+            in degrees.
+        predicted_directions (array_like): A 1D array or list of predicted wind
+            direction values in degrees.
+        num_bins (int, optional): Number of bins for the histogram. Default is 36.
+
+    Returns:
+        matplotlib.figure.Figure: A matplotlib Figure object containing the circular
+            histogram plot.
+    """
+    true_radians = np.radians(true_directions)
+    predicted_radians = np.radians(predicted_directions)
+
+    fig, ax = plt.subplots(figsize=(8, 8), subplot_kw={"polar": True})
+    ax.set_theta_zero_location("N")
+    ax.set_theta_direction(-1)
+
+    bins = np.linspace(0, 2 * np.pi, num_bins + 1)
+    true_hist, _, _ = ax.hist(
+        true_radians, bins=bins, alpha=0.5, color="blue", label="True Directions"
+    )
+    predicted_hist, _, _ = ax.hist(
+        predicted_radians,
+        bins=bins,
+        alpha=0.5,
+        color="red",
+        label="Predicted Directions",
+    )
+
+    ax.legend(loc="upper right")
 
     return fig

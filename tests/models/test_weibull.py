@@ -6,7 +6,7 @@ import pytest
 # from pyro.infer import MCMC, NUTS, Predictive
 from pyro.distributions import Weibull
 
-from REStats.models.weibull import calc_m, get_params, fit_weibull, weibull_model
+from REStats.models.weibull import fit, calc_m, get_params, weibull_model
 
 
 @pytest.fixture
@@ -26,8 +26,8 @@ def test_weibull_model(synthetic_data):
     assert "obs" in trace
 
 
-def test_fit_weibull(synthetic_data):
-    idata = fit_weibull(synthetic_data)
+def test_fit(synthetic_data):
+    idata = fit(synthetic_data)
     assert idata is not None
     assert hasattr(idata, "posterior")
     assert hasattr(idata, "prior")
@@ -35,7 +35,7 @@ def test_fit_weibull(synthetic_data):
 
 
 def test_get_params(synthetic_data):
-    idata = fit_weibull(synthetic_data)
+    idata = fit(synthetic_data)
     shape, scale = get_params(idata)
     assert isinstance(shape, float)
     assert isinstance(scale, float)

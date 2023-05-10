@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-def calc_iec_power_curve(data: pd.DataFrame, bin_size: float = 0.5) -> pd.DataFrame:
+def fit(data: pd.DataFrame, bin_size: float = 0.5) -> pd.DataFrame:
     """
     Calculates the IEC power curve for wind turbine data.
 
