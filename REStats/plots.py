@@ -77,14 +77,14 @@ def plot_circular_histogram(true_directions, predicted_directions, num_bins=36):
 
     bins = np.linspace(0, 2 * np.pi, num_bins + 1)
     true_hist, _, _ = ax.hist(
-        true_radians, bins=bins, alpha=0.5, color="blue", label="True Directions"
+        true_radians, bins=bins, alpha=0.5, color="blue", label="observed"
     )
     predicted_hist, _, _ = ax.hist(
         predicted_radians,
         bins=bins,
         alpha=0.5,
         color="red",
-        label="Predicted Directions",
+        label="predicted",
     )
 
     ax.legend(loc="upper right")
