@@ -49,13 +49,13 @@ def backtest(v_train, v_test, idata_wb=None, steps=1):
 def calc_persistence(v_test, steps=1):
     per = np.empty(len(v_test))
 
-    t = 0
+    t = 1
     while t < len(v_test) - steps:
-        per[t : t + steps] = v_test[t]
+        per[t : t + steps] = v_test[t - 1]
 
         t += steps
 
-    per = per[: len(v_test) - 1]
+    per = per[1 : len(v_test)]
 
     per_rmse = mean_squared_error(v_test[1:], per, squared=False)
     per_rmse_rel = per_rmse / v_test[1:].mean() * 100

@@ -8,13 +8,13 @@ from REStats.circular_metrics import circular_mae, circular_mean, circular_rmse
 def calc_persistence(wind_dir, steps=1):
     per = np.empty(len(wind_dir))
 
-    t = 0
+    t = 1
     while t < len(wind_dir) - steps:
-        per[t : t + steps] = wind_dir[t]
+        per[t : t + steps] = wind_dir[t - 1]
 
         t += steps
 
-    per = per[: len(wind_dir) - 1]
+    per = per[1 : len(wind_dir)]
 
     per_rmse = circular_rmse(wind_dir[1:], per)
     per_rmse_rel = per_rmse / circular_mean(wind_dir[1:]) * 100
