@@ -6,6 +6,66 @@ from REStats.utils import calc_err, transform, inv_transform
 from REStats.models import weibull
 
 
+def preprocess(ws):
+    """
+    Preprocess the wind speed data by fitting a Weibull distribution, extracting its
+    parameters and transforming the data.
+
+    The function returns the shape and scale parameters of the Weibull distribution,
+    the modulus of the Weibull distribution, the transformed wind speed data, and the
+    hour-wise statistics of the transformed wind speed data.
+
+    Args:
+        ws (pandas.Series or numpy.ndarray): The wind speed data to preprocess.
+
+    Returns:
+        dict: A dictionary containing the following keys:
+            - 'wb_shape': The shape parameter of the fitted Weibull distribution.
+            - 'wb_scale': The scale parameter of the fitted Weibull distribution.
+            - 'wb_m': The modulus of the Weibull distribution.
+            - 'ws_tf': The transformed wind speed data as a DataFrame.
+            - 'hr_stats': The hour-wise statistics of the transformed wind speed data.
+    """
+    idata_wb = weibull.fit(ws)
+
+    shape, scale = weibull.get_params(idata_wb)
+    m = weibull.calc_m(shape)
+    ws_tf, hr_stats = transform(ws, m)
+
+    return {
+        "wb_shape": shape,
+        "wb_scale": scale,
+        "wb_m": m,
+        "ws_tf": ws_tf,
+        "hr_stats": hr_stats,
+    }
+
+
+def fit(ws_tf, order=(2, 0, 2), trend="n", **kwargs):
+    """
+    Fit an ARIMA model to the preprocessed and transformed wind speed data.
+
+    The order of the ARIMA model and the trend component can be customized. Additional
+    keyword arguments can be passed to the ARIMA model instantiation.
+
+    Args:
+        ws_tf (pandas.DataFrame): Preprocessed and transformed wind speed data,
+            obtained from the `preprocess` function.
+        order (tuple, optional): A tuple of three integers specifying the order of the
+            ARIMA model. Default is (2, 0, 2).
+        trend (str, optional): The trend component to include in the model. Default is
+            'n', which indicates no trend.
+        **kwargs: Additional keyword arguments to pass to the ARIMA model instantiation.
+
+    Returns:
+        ARIMAResults: The fitted ARIMA model.
+    """
+    arma_mod = ARIMA(ws_tf.v_scaled_std, order=order, trend=trend, **kwargs)
+    model = arma_mod.fit()
+
+    return model
+
+
 def backtest(v_train, v_test, idata_wb=None, steps=1):
     """
     Performs a backtest of wind speed forecasting using the Weibull distribution and
