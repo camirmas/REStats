@@ -1,13 +1,36 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
 from statsmodels.tsa.arima.model import ARIMA
 
-from REStats.utils import transform, inv_transform
+from REStats.utils import calc_err, transform, inv_transform
 from REStats.models import weibull
 
 
 def backtest(v_train, v_test, idata_wb=None, steps=1):
+    """
+    Performs a backtest of wind speed forecasting using the Weibull distribution and
+    ARIMA models.
+
+    This function fits the Weibull distribution to the training data, scales the data
+    using the shape parameter of the fitted distribution, fits an ARIMA model to the
+    transformed training data, and then performs one-step ahead forecasting iteratively
+    over the test data.
+
+    Args:
+        v_train (pandas.DataFrame): The training data containing the wind speed.
+        v_test (pandas.DataFrame): The testing data containing the wind speed.
+        idata_wb (arviz.InferenceData, optional): An InferenceData object from Arviz
+            based on a Weibull distribution fit. If None, the Weibull distribution is
+            fitted to the training data. Defaults to None.
+        steps (int, optional): The number of steps ahead to forecast. Defaults to 1.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - pandas.DataFrame: A DataFrame with the full forecasts for the testing
+                data.
+            - tuple: A tuple containing the RMSE, Relative RMSE, and MAE between the
+                observed and predicted values in the test set.
+    """
     if idata_wb is None:
         idata_wb = weibull.fit(v_train.wind_speed)
 
@@ -35,34 +58,38 @@ def backtest(v_train, v_test, idata_wb=None, steps=1):
     forecasts_full = pd.concat(forecasts)
     forecasts_full = forecasts_full.iloc[: len(v_test)]
 
-    fcast_rmse = mean_squared_error(v_test.v, forecasts_full["mean"], squared=False)
-    fcast_rmse_rel = fcast_rmse / v_test.v.mean() * 100
     print(f"\nResults for step size: {steps}")
-    print(f"Forecast RMSE: {fcast_rmse} m/s")
-    print(f"Forecast RMSE (%): {fcast_rmse_rel}")
-    fcast_mae = abs(v_test.v - forecasts_full["mean"]).mean()
-    print(f"Forecast MAE: {fcast_mae} m/s")
+    err = calc_err(v_test.v, forecasts_full["mean"])
 
-    return forecasts_full, (fcast_rmse, fcast_rmse_rel, fcast_mae)
+    return forecasts_full, err
 
 
 def calc_persistence(v_test, steps=1):
+    """
+    Calculate a persistence forecast for the wind speed and evaluate the forecast
+    accuracy.
+
+    The persistence forecast method uses the wind speed at the current time step
+    as the forecast for the next time step.
+
+    Args:
+        v_test (array_like): A 1D array or list of observed wind speed values.
+        steps (int, optional): The forecast horizon in number of steps. Default is 1.
+
+    Returns:
+        tuple: A tuple containing the persistence forecast and a tuple of forecast
+        accuracy metrics (RMSE, relative RMSE, MAE).
+    """
     per = np.empty(len(v_test))
 
     t = 1
-    while t < len(v_test) - steps:
+    while t <= len(v_test) - steps:
         per[t : t + steps] = v_test[t - 1]
 
         t += steps
 
     per = per[1 : len(v_test)]
 
-    per_rmse = mean_squared_error(v_test[1:], per, squared=False)
-    per_rmse_rel = per_rmse / v_test[1:].mean() * 100
-    per_mae = abs(v_test[1:] - per).mean()
+    err = calc_err(v_test[1:], per)
 
-    print(f"PER RMSE: {per_rmse} m/s")
-    print(f"PER RMSE (%): {per_rmse_rel}")
-    print(f"PER MAE: {per_mae} m/s")
-
-    return per, (per_rmse, per_rmse_rel, per_mae)
+    return per, err

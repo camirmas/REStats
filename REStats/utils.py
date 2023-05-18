@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 from REStats.circular_metrics import circular_std, circular_mean
 
@@ -105,6 +106,25 @@ def filter_outliers(
 
 
 def transform(v_df, m, field="wind_speed", hr_stats=None):
+    """
+    Transform the input wind speed time series using the Weibull modulus and scale
+    it by standardizing each hour of the day.
+
+    Args:
+        v_df (pandas.DataFrame): DataFrame containing wind speed time series. The index
+        should be a DateTimeIndex.
+        m (float): The Weibull modulus.
+        field (str, optional): The name of the column in `v_df` that contains the wind
+            speed data. Defaults to "wind_speed".
+        hr_stats (tuple, optional): A tuple containing the mean and standard deviation
+            for each hour of the day. If not provided, these statistics are computed
+            from `v_df`. Defaults to None.
+
+    Returns:
+        tuple: A tuple containing:
+            - pandas.DataFrame: The transformed and standardized DataFrame.
+            - tuple: A tuple containing the hourly means and standard deviations.
+    """
     res_df = v_df.copy()
 
     v_scaled = res_df[field] ** m
@@ -126,6 +146,21 @@ def transform(v_df, m, field="wind_speed", hr_stats=None):
 
 
 def inv_transform(v_df, m, hr_stats):
+    """
+    Perform the inverse transformation of the input DataFrame.
+
+    This function descales and applies the inverse Weibull transformation (i.e., takes
+    the m-th root) to the DataFrame obtained from the `transform` function.
+
+    Args:
+        v_df (pandas.DataFrame): DataFrame obtained from the `transform` function.
+        m (float): The Weibull modulus used in the `transform` function.
+        hr_stats (tuple): A tuple containing the mean and standard deviation for each
+            hour of the day, obtained from the `transform` function.
+
+    Returns:
+        pandas.DataFrame: The DataFrame after applying the inverse transformation.
+    """
     v_df_copy = v_df.copy()
 
     hr_mean, hr_std = hr_stats
@@ -140,7 +175,7 @@ def inv_transform(v_df, m, hr_stats):
 
 def standardize(df, ref_df=None):
     """
-    Standardizes a DataFrame containing wind_speed, wind_dir, and power columns.
+    Standardize a DataFrame containing wind_speed, wind_dir, and power columns.
 
     Args:
         df (pandas.DataFrame): DataFrame containing wind_speed, wind_dir, and
@@ -179,7 +214,7 @@ def standardize(df, ref_df=None):
 
 def downsample(df: pd.DataFrame):
     """
-    Downsamples a pandas DataFrame containing a 10-minute time series of wind speed and
+    Downsample a pandas DataFrame containing a 10-minute time series of wind speed and
         wind direction data to 1 hour.
 
     Args:
@@ -218,3 +253,30 @@ def downsample(df: pd.DataFrame):
     )
 
     return downsampled_df
+
+
+def calc_err(obs, pred, unit="m/s", verbose=True):
+    """
+    Calculate Root Mean Squared Error (RMSE), Relative RMSE, and Mean Absolute Error
+    (MAE) between the observed and predicted values.
+
+    Args:
+        obs (array_like): A 1D array or list of observed values.
+        pred (array_like): A 1D array or list of predicted values.
+        unit (str, optional): The unit of the values. Default is "m/s".
+        verbose (bool, optional): If True, prints the RMSE, Relative RMSE, and MAE.
+            Default is True.
+
+    Returns:
+        tuple: A tuple containing the RMSE, Relative RMSE, and MAE.
+    """
+    rmse = mean_squared_error(obs, pred, squared=False)
+    rmse_rel = rmse / np.mean(pred) * 100
+    per_mae = mean_absolute_error(obs, pred)
+
+    if verbose:
+        print(f"RMSE: {rmse} {unit}")
+        print(f"RMSE (%): {rmse_rel}")
+        print(f"MAE: {per_mae} {unit}")
+
+    return rmse, rmse_rel, per_mae

@@ -2,29 +2,35 @@ import numpy as np
 import pandas as pd
 from statsmodels.tsa.arima.model import ARIMA
 
-from REStats.circular_metrics import circular_mae, circular_mean, circular_rmse
+from REStats.circular_metrics import circular_err
 
 
 def calc_persistence(wind_dir, steps=1):
+    """
+    Calculate a persistence forecast for wind direction. The persistence model assumes
+    that the conditions at the time of forecasting will stay the same for the period of
+    the forecast.
+
+    Args:
+        wind_dir (np.ndarray): An array of wind direction measurements.
+        steps (int, optional): Number of steps forward for the forecast. Default is 1.
+
+    Returns:
+        tuple: A tuple where the first element is an array with the persistence forecast
+               and the second element is the error calculated using circular_err
+               function.
+    """
     per = np.empty(len(wind_dir))
 
     t = 1
-    while t < len(wind_dir) - steps:
+    while t <= len(wind_dir) - steps:
         per[t : t + steps] = wind_dir[t - 1]
-
         t += steps
 
     per = per[1 : len(wind_dir)]
+    err = circular_err(wind_dir[1:], per)
 
-    per_rmse = circular_rmse(wind_dir[1:], per)
-    per_rmse_rel = per_rmse / circular_mean(wind_dir[1:]) * 100
-    per_mae = circular_mae(wind_dir[1:], per)
-
-    print(f"PER RMSE: {per_rmse} deg")
-    print(f"PER RMSE (%): {per_rmse_rel}")
-    print(f"PER MAE: {per_mae} deg")
-
-    return per, (per_rmse, per_rmse_rel, per_mae)
+    return per, err
 
 
 def fit(wind_dir_data):
@@ -106,6 +112,24 @@ def predict(sin_model, cos_model, wind_dir_data):
 
 
 def backtest(wd_train, wd_test, steps=1):
+    """
+    Perform a backtest of wind direction forecasting, by training ARMA models on the
+    training data and sequentially predicting the wind direction on the test data.
+
+    Args:
+        wd_train (pd.Series): The wind direction training data in degrees.
+        wd_test (pd.Series): The wind direction test data in degrees.
+        steps (int, optional): The number of steps to forecast at each iteration.
+            Default is 1.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - pd.DataFrame: A DataFrame with columns 'mean' (predicted wind direction),
+                            'lower_ci' (lower bound of confidence interval), and
+                            'upper_ci' (upper bound of confidence interval).
+            - tuple: A tuple containing RMSE, relative RMSE, and MAE calculated by
+                     comparing the forecasted values with the actual test data.
+    """
     wd_test_radians = np.radians(wd_test)
     sin_model, cos_model = fit(wd_train)
     forecasts = []
@@ -158,12 +182,7 @@ def backtest(wd_train, wd_test, steps=1):
     forecasts_full = pd.concat(forecasts)
     forecasts_full = forecasts_full.iloc[: len(wd_test)]
 
-    fcast_rmse = circular_rmse(wd_test, forecasts_full["mean"])
-    fcast_rmse_rel = fcast_rmse / circular_mean(wd_test) * 100
     print(f"\nResults for step size: {steps}")
-    print(f"Forecast RMSE: {fcast_rmse} deg")
-    print(f"Forecast RMSE (%): {fcast_rmse_rel}")
-    fcast_mae = circular_mae(wd_test, forecasts_full["mean"])
-    print(f"Forecast MAE: {fcast_mae} deg")
+    err = circular_err(wd_test, forecasts_full["mean"])
 
-    return forecasts_full, (fcast_rmse, fcast_rmse_rel, fcast_mae)
+    return forecasts_full, err

@@ -110,3 +110,30 @@ def circular_residuals(true_degrees, predicted_degrees):
     )
     residuals_degrees = np.degrees(residuals_radians)
     return residuals_degrees
+
+
+def circular_err(obs, pred, unit="deg", verbose=True):
+    """
+    Compute Root Mean Square Error (RMSE), relative RMSE, and Mean Absolute Error (MAE)
+    in circular measurements (like angles).
+
+    Args:
+        obs (np.ndarray): An array of observed values.
+        pred (np.ndarray): An array of predicted values.
+        unit (str, optional): Unit of the error values to be printed, default is 'deg'
+            (degrees).
+        verbose (bool, optional): If True, print error values; default is True.
+
+    Returns:
+        tuple: A tuple containing RMSE, relative RMSE (in percentage) and MAE.
+    """
+    rmse = circular_rmse(obs, pred)
+    rmse_rel = rmse / circular_mean(obs) * 100
+    mae = circular_mae(obs, pred)
+
+    if verbose:
+        print(f"RMSE: {rmse} {unit}")
+        print(f"RMSE (%): {rmse_rel}")
+        print(f"MAE: {mae} {unit}")
+
+    return rmse, rmse_rel, mae

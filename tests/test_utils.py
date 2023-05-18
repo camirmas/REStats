@@ -2,8 +2,10 @@ import numpy as np
 import pandas as pd
 import pytest
 from numpy.testing import assert_array_almost_equal
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 from REStats.utils import (
+    calc_err,
     transform,
     downsample,
     standardize,
@@ -165,3 +167,24 @@ def test_downsample():
         assert downsampled_df.loc[
             group.index[0].floor("H"), "turbulence_intensity"
         ] == pytest.approx(expected_turbulence_intensity, abs=1e-6)
+
+
+def test_calc_err():
+    obs = np.array([2.0, 2.5, 3.0, 2.5, 2.0])
+    pred = np.array([2.0, 2.0, 2.5, 3.0, 2.5])
+
+    err_metrics = calc_err(obs, pred, verbose=False)
+
+    assert (
+        isinstance(err_metrics, tuple) and len(err_metrics) == 3
+    )  # Check metrics format
+
+    # Calculate expected metrics
+    expected_rmse = mean_squared_error(obs, pred, squared=False)
+    expected_rmse_rel = expected_rmse / np.mean(pred) * 100
+    expected_mae = mean_absolute_error(obs, pred)
+
+    # Check metrics values
+    assert np.isclose(err_metrics[0], expected_rmse)
+    assert np.isclose(err_metrics[1], expected_rmse_rel)
+    assert np.isclose(err_metrics[2], expected_mae)
