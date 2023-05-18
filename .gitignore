@@ -133,8 +133,6 @@ env
 data
 figs
 
-*.png
-
 .DS_Store
 
 forecast_files/

@@ -28,16 +28,16 @@ def plot_wind_rose(
     Plot a wind rose using a pandas DataFrame and return the figure object.
 
     Parameters:
-    df (pandas.DataFrame): DataFrame containing wind speed and direction data.
-    speed_col (str): Column name for wind speed data.
-    direction_col (str): Column name for wind direction data.
-    bins (list or int, optional): Number of bins or a list of bins for wind speed data.
-        Defaults to None.
-    cmap (list, optional): Colormap for the plot.
-    legend (bool, optional): Whether to display the legend. Defaults to True.
+        df (pandas.DataFrame): DataFrame containing wind speed and direction data.
+        speed_col (str): Column name for wind speed data.
+        direction_col (str): Column name for wind direction data.
+        bins (list or int, optional): Number of bins or a list of bins for wind speed
+            data. Defaults to None.
+        cmap (list, optional): Colormap for the plot.
+        legend (bool, optional): Whether to display the legend. Defaults to True.
 
     Returns:
-    matplotlib.figure.Figure: The generated figure object.
+        matplotlib.figure.Figure: The generated figure object.
     """
     # Create a new figure and windrose axes
     fig = plt.figure(**kwargs)

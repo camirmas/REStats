@@ -14,3 +14,7 @@ windrose
 # Dev
 pytest
 pre-commit
+sphinx
+sphinx-rtd-theme
+
+-e .
