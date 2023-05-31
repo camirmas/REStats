@@ -24,7 +24,7 @@ REStats 🌳
    <br>
 
 ``REStats`` is a Python package that provides tools and models for analyzing and predicting the
-performance of hybrid wind/hydrogen systems. It couples wind speed forecasts with power curve
+performance of wind/hydrogen systems. It couples wind speed forecasts with power curve
 prediction, offering a modular framework for robust analysis and decision-making under uncertainty.
 
 Features
