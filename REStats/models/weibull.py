@@ -7,6 +7,7 @@ import pyro.optim
 import matplotlib.pyplot as plt
 import pyro.distributions as dist
 from pyro.infer import MCMC, NUTS, Predictive
+from scipy.stats import gamma, weibull_min
 
 
 def weibull_model(data):
@@ -19,8 +20,8 @@ def weibull_model(data):
     Returns:
         None
     """
-    shape = pyro.sample("shape", dist.Gamma(2.5, 1))
-    scale = pyro.sample("scale", dist.Gamma(3, 0.5))
+    shape = pyro.sample("shape", dist.Gamma(7.5, 0.4))
+    scale = pyro.sample("scale", dist.Gamma(10, 1))
 
     with pyro.plate("data", len(data)):
         pyro.sample("obs", dist.Weibull(scale, shape), obs=data)
@@ -91,27 +92,29 @@ def calc_m(shape):
     return shape / 3.6
 
 
-def plot_prior_samples(idata_wb):
-    fig, ax = plt.subplots()
-    ax.set_title("Weibull prior distributions")
+def plot_prior_samples(shape_prior_params, scale_prior_params, num_samples):
+    # draw samples from the gamma priors
+    shape_samples = gamma.rvs(
+        a=shape_prior_params[0], scale=shape_prior_params[1], size=num_samples
+    )
+    scale_samples = gamma.rvs(
+        a=scale_prior_params[0], scale=scale_prior_params[1], size=num_samples
+    )
+
+    # create a figure
+    fig, ax = plt.subplots(figsize=(8, 6))
     ax.set_xmargin(0)
-    ax.set_xlabel("Wind Speed (m/s)")
-    ax.set_ylabel("Density")
-    ax.set_ylim(top=2.5)
 
-    shapes = idata_wb.prior.shape[0, :10]
-    scales = idata_wb.prior.scale[0, :10]
+    # for each pair of shape and scale samples, draw a sample from the
+    # corresponding Weibull distribution
+    for shape, scale in zip(shape_samples, scale_samples):
+        x = np.linspace(0, 18, 1000)
+        y = weibull_min.pdf(x, c=shape, scale=scale)
+        ax.plot(x, y)  # use low alpha to see overlapping lines
 
-    x = np.linspace(0, 16, 500)
-
-    def weib(x, scale, shape):
-        return (
-            (shape / scale)
-            * (x / scale) ** (shape - 1)
-            * np.exp(-((x / scale) ** shape))
-        )
-
-    for shape, scale in np.array([shapes, scales]).T:
-        ax.plot(x, scale * weib(x, scale, shape))
+    # set labels
+    ax.set_xlabel("Wind speed (m/s)")
+    ax.set_ylabel("Probability Density")
+    ax.set_title("Weibull Prior Predictive Samples")
 
     return fig
